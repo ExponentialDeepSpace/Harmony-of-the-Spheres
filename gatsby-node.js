@@ -119,6 +119,11 @@ exports.createPages = async ({ actions, graphql }) => {
 
     const images = [
       {
+        name: "SolarShip",
+        description:
+          "EDS SolarShip"
+      },
+      {
         name: "Exoplanets",
         description:
           "3D gravity simulations, with procedural planet textures based on data from the Exoplanet Archive, of planets known to orbit stars other than our own, the Sun."
@@ -238,7 +243,7 @@ exports.createPages = async ({ actions, graphql }) => {
     createPage({
       path: `/${_.kebabCase(node.type)}/${_.kebabCase(node.name)}`,
       component:
-        node.type !== "Starship"
+        node.type !== "Starship" && node.type !== "SolarShip"
           ? require.resolve(`./src/templates/SimulatorContainer.tsx`)
           : require.resolve(`./src/templates/StarshipScenario.tsx`),
       context: {
