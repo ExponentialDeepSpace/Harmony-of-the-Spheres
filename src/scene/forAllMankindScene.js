@@ -13,6 +13,9 @@ import {
   constructSOITree,
   findCurrentSOI
 } from "../physics/spacecraft/lambert";
+import { join } from "../../exoplanet-archive/massRadiusData";
+import { Euler } from "three";
+import { getObjFromArrByKeyValuePair } from "../utils";
 
 const TWEEN = require("@tweenjs/tween.js");
 
@@ -99,6 +102,27 @@ const scene = {
       }
     });
 
+    const dir = new THREE.Vector3(1, 0, 0);
+
+    //normalize the direction vector (convert to vector of length 1)
+    dir.normalize();
+
+    const origin = new THREE.Vector3(0, 0, 0);
+    const length = 1000;
+    const hex = 0xffff00;
+
+    const arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
+    this.scene.add(arrowHelper);
+    this.scene.arrowHelper = arrowHelper;
+
+    const massesLen = this.system.masses.length;
+
+    for (let i = 0; i < massesLen; i++) {
+      const mass = this.system.masses[i];
+      if(mass.name == "Earth") {
+        this.scene.earth = mass;
+      }
+    }
     this.loop();
   },
 
@@ -189,7 +213,7 @@ const scene = {
 
       const main = massManifestation.getObjectByName("main");
 
-      if (mass.spacecraft && this.scenario.thrustOn && this.scenario.playing) {
+      /*if (mass.spacecraft && this.scenario.thrustOn && this.scenario.playing) {
         const velocity = new THREE.Vector3(1, 0, 0)
           .applyQuaternion(main.quaternion)
           .multiplyScalar(0.005);
@@ -197,6 +221,51 @@ const scene = {
         mass.vx += velocity.x;
         mass.vy += velocity.y;
         mass.vz += velocity.z;
+      }*/
+
+      if (mass.spacecraft && this.scenario.playing) {
+
+        const earth = this.scene.earth;
+        const massVelocity = new THREE.Vector3(mass.vx - earth.vx, mass.vy - earth.vy, mass.vz - earth.vz);
+        // const massVelocity = new THREE.Vector3(1.0, 0.0, 0.0);
+        const x = new THREE.Vector3(1.0, 0, 0);
+        const y = new THREE.Vector3(0, 1.0, 0);
+        const z = new THREE.Vector3(0.0, 0.0, 1.0);
+
+        let dir = massVelocity.clone();
+        dir.normalize();
+        dir.negate();
+        this.scene.arrowHelper.setDirection(dir);
+
+        let dir_x = dir.clone();
+        let dir_y = dir.clone();
+        let dir_z = dir.clone();
+
+        const phi = dir_z.projectOnPlane(x).angleTo(z);
+        const omega = dir_y.projectOnPlane(z).angleTo(y);
+        const alpha = dir_x.projectOnPlane(y).angleTo(x);
+
+        console.log(mass.name, ":", "phi: ", phi, "omega:", omega, "alpha:", alpha);
+
+        const spacecraftDirections = {
+          x: alpha,
+          y:  alpha > 2 ? (omega + Math.PI / 2) : (omega - Math.PI - Math.PI / 2),
+          z: alpha > 2 ? phi : (phi - Math.PI),
+        };
+        this.store.dispatch(
+          modifyScenarioProperty(
+            {
+              key: "spacecraftDirections",
+              value: spacecraftDirections
+            }
+          ));
+
+        // const velocity = direction
+        //   .multiplyScalar(0.1 / 100 /* * this.system.dt */);
+
+        // mass.vx += velocity.x;
+        // mass.vy += velocity.y;
+        // mass.vz += velocity.z;
       }
     }
 
