@@ -119,7 +119,7 @@ const scene = {
 
     for (let i = 0; i < massesLen; i++) {
       const mass = this.system.masses[i];
-      if(mass.name == "Earth") {
+      if (mass.name == "Earth") {
         this.scene.earth = mass;
       }
     }
@@ -227,7 +227,7 @@ const scene = {
 
         const earth = this.scene.earth;
         const massVelocity = new THREE.Vector3(mass.vx - earth.vx, mass.vy - earth.vy, mass.vz - earth.vz);
-        // const massVelocity = new THREE.Vector3(1.0, 0.0, 0.0);
+
         const x = new THREE.Vector3(1.0, 0, 0);
         const y = new THREE.Vector3(0, 1.0, 0);
         const z = new THREE.Vector3(0.0, 0.0, 1.0);
@@ -249,7 +249,7 @@ const scene = {
 
         const spacecraftDirections = {
           x: alpha,
-          y:  alpha > 2 ? (omega + Math.PI / 2) : (omega - Math.PI - Math.PI / 2),
+          y: alpha > 2 ? (omega + Math.PI / 2) : (omega - Math.PI - Math.PI / 2),
           z: alpha > 2 ? phi : (phi - Math.PI),
         };
         this.store.dispatch(
@@ -260,12 +260,19 @@ const scene = {
             }
           ));
 
-        // const velocity = direction
-        //   .multiplyScalar(0.1 / 100 /* * this.system.dt */);
+        // const au = 149597870700; // meters
+        // const earth_yr = 365.2564 * 24 * 60 * 60; // seconds
+        const earth_yr_2_div_au = 6657.294074708; // (earth_yr ** earth_yr) / au
+        const acc = 0.1 / 100; // m/(s^2)
+        const acc_au_earth_yr = acc * earth_yr_2_div_au;
 
-        // mass.vx += velocity.x;
-        // mass.vy += velocity.y;
-        // mass.vz += velocity.z;
+        const solarshipSpeed = new THREE.Vector3(1, 0.0, 0.0)
+          .applyQuaternion(main.quaternion)
+          .multiplyScalar(acc_au_earth_yr * this.system.dt);
+
+        mass.vx += solarshipSpeed.x;
+        mass.vy += solarshipSpeed.y;
+        mass.vz += solarshipSpeed.z;
       }
     }
 
