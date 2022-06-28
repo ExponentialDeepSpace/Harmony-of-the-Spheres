@@ -26,6 +26,16 @@ import ThrustControls from "./ThrustControls";
 const getVelocityMagnitude = (v: Vector) =>
   Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 
+const getTrackHeight = (p: Vector, o: Vector) => {
+  const px = p.x - o.x;
+  const py = p.y - o.y;
+  const pz = p.z - o.z;
+  const height = Math.sqrt(px * px + py * py + pz * pz);
+  const au = 149597870.700; // km
+  const earth_r = 6371; // km
+  return height * au - earth_r;
+}
+  
 interface CockpitDashboardProps {
   scenario: ScenarioState;
   modifyScenarioProperty: typeof modifyScenarioProperty;
@@ -42,6 +52,11 @@ export default ({
     scenario.masses,
     "name",
     scenario.trajectoryTarget
+  );
+  const earth = getObjFromArrByKeyValuePair(
+    scenario.masses,
+    "name",
+    "Earth"
   );
 
   const [gui, setGUI] = useState({
@@ -60,7 +75,8 @@ export default ({
     orbitalElements: { a: 0, e: 0, i: 0, argP: 0, lAn: 0 },
     targetSOI: 0,
     velocity: 0,
-    relativeVelocity: 0
+    relativeVelocity: 0,
+    trackHeight: 0,
   });
 
   useEffect(() => {
@@ -143,7 +159,8 @@ export default ({
             x: spacecraftMass.vx,
             y: spacecraftMass.vy,
             z: spacecraftMass.vz
-          })
+          }),
+          trackHeight: getTrackHeight(spacecraftMass, earth),
       });
 
       modifyScenarioProperty({
@@ -233,6 +250,12 @@ export default ({
                     <i>ϖ</i>
                   </td>
                   <td>{spacecraft.orbitalElements.argP}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <i>H</i>
+                  </td>
+                  <td>{spacecraft.trackHeight}</td>
                 </tr>
               </tbody>
             </table>
